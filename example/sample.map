@@ -1,0 +1,6 @@
+# Comments - Semicolon-Delimited commands
+# MAP;image_filename;virtual_path
+MAP;example.zip;C:\
+MAP;exiso.iso;D:\
+MAP;windows.vhdx;C:\Windows
+LINK;somefile_example.txt;C:\app\somefile.txt
