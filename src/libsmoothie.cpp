@@ -10,7 +10,32 @@
 #include "libsmoothie.h"
 
 #if _WIN32
+#include <windows.h>
 #define EXPORTED __declspec(dllexport)
+#define LAA(se) {{se},SE_PRIVILEGE_ENABLED|SE_PRIVILEGE_ENABLED_BY_DEFAULT}
+
+#define BEGIN_PRIVILEGES(tp, n) static const struct {ULONG PrivilegeCount;LUID_AND_ATTRIBUTES Privileges[n];} tp = {n,{
+#define END_PRIVILEGES }};
+
+// in case you not include wdm.h, where this defined
+#define SE_BACKUP_PRIVILEGE (17L)
+// This is needed because of traditionally fs-restricted directories such as System Volume Information.
+ULONG AdjustPrivileges(){
+    if (ImpersonateSelf(SecurityImpersonation))
+    {
+        HANDLE hToken;
+        if (OpenThreadToken(GetCurrentThread(), TOKEN_ADJUST_PRIVILEGES, TRUE, &hToken))
+        {
+            BEGIN_PRIVILEGES(tp, 1)
+                LAA(SE_BACKUP_PRIVILEGE),
+            END_PRIVILEGES
+            AdjustTokenPrivileges(hToken, FALSE, (PTOKEN_PRIVILEGES)&tp, 0, 0, 0);
+            CloseHandle(hToken);
+        }
+    }
+
+    return GetLastError();
+}
 #else
 #define EXPORTED __attribute__((visibility("default")))
 #endif
@@ -18,6 +43,7 @@
 extern "C"{
     EXPORTED int smoothie_create(const char* path_to_mapfile, const char* path_to_root, const char* path_to_persistence);
     EXPORTED int smoothie_destroy(const char* path_to_root);
+    EXPORTED int smoothie_resolve(const char* path_to_root, const char* virtual_path, char* out_path);
 }
 
 static std::filesystem::path mount_root;
@@ -26,6 +52,9 @@ static std::filesystem::path mounts_conf_path;
 static std::filesystem::path persistence_conf_path;
 
 void init_paths(const char* path_to_root){
+    #if _WIN32
+    AdjustPrivileges();
+    #endif
     std::filesystem::path root = path_to_root;
     mount_root = root / std::string("mnt");
     map_root = root / std::string("map");
@@ -155,5 +184,12 @@ int smoothie_create(const char* path_to_mapfile, const char* path_to_root, const
     return 1;
 }
 
-
-
+// Resolve a virtual 
+int smoothie_resolve(const char* path_to_root, const char* virtual_path, char* out_path){
+    init_paths(path_to_root);
+    std::string vpath = virtual_path;
+    std::filesystem::path mapped_path = resolve_map_path(map_root,vpath);
+    if(mapped_path.empty()){return 0;}
+    strcpy(out_path,mapped_path.string().c_str());
+return 1;
+}
