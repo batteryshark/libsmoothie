@@ -32,8 +32,9 @@ void path_create_symlink(const std::filesystem::path& src_path, const std::files
 
 // Separates a path from a given root and attaches a new root to it.
 // e.g. C:\\test\\app\\banana\\example.txt, C:\\test\\app, C:\\wat -> C:\\wat\\banana\\example.txt
-void rebase_path(const std::filesystem::path& in_path, const std::filesystem::path& old_root, const std::filesystem::path& new_root, std::filesystem::path& rebased_path){
-    rebased_path = new_root / std::filesystem::relative(in_path,old_root);
+std::filesystem::path rebase_path(const std::filesystem::path& in_path, const std::filesystem::path& old_root, const std::filesystem::path& new_root){
+    std::filesystem::path rebased_path = new_root / std::filesystem::relative(in_path,old_root);
+    return rebased_path;
 }
 
 // Creates a 'mapped' representation of the absolute path by conversion to a stem prepended to a given root.
@@ -78,9 +79,8 @@ void map_path(const std::filesystem::path& map_root, const std::filesystem::path
     // Create the Resolved Root if it doesn't exist
     std::filesystem::create_directories(mapped_base);
     
-    for (std::filesystem::recursive_directory_iterator i(src_root), end; i != end; ++i){
-        std::filesystem::path rebased_path;
-        rebase_path(i->path(),src_root,mapped_base,rebased_path);
+    for (std::filesystem::recursive_directory_iterator i(src_root,std::filesystem::directory_options::skip_permission_denied), end; i != end; ++i){
+        std::filesystem::path rebased_path = rebase_path(i->path(),src_root,mapped_base);
         if (is_directory(i->path())){
             std::filesystem::create_directories(rebased_path);
         }else{
@@ -100,15 +100,14 @@ void cleanup_map(const std::filesystem::path& map_root,const std::filesystem::pa
     int persist = std::filesystem::exists(persistence_root);
     // Remove the symlinks - if there are any files that were written, move those to persistence
     // or remove them.
-    for (std::filesystem::recursive_directory_iterator i(map_root), end; i != end; ++i){
+    for (std::filesystem::recursive_directory_iterator i(map_root,std::filesystem::directory_options::skip_permission_denied), end; i != end; ++i){
         if (!std::filesystem::is_directory(i->path())){                        
             if(!persist || path_is_symlink(i->path())){            
                 std::filesystem::remove(i->path());
                 continue;
             }
 
-            std::filesystem::path pfp;
-            rebase_path(i->path(),map_root,persistence_root,pfp);
+            std::filesystem::path pfp = rebase_path(i->path(),map_root,persistence_root);
             std::filesystem::create_directories(pfp.parent_path());
             if(std::filesystem::exists(pfp)){
                 std::filesystem::remove(pfp);
@@ -118,7 +117,7 @@ void cleanup_map(const std::filesystem::path& map_root,const std::filesystem::pa
     }
 
     // Remove all Leftover Directories
-    for (std::filesystem::recursive_directory_iterator i(map_root), end; i != end; ++i){
+    for (std::filesystem::recursive_directory_iterator i(map_root,std::filesystem::directory_options::skip_permission_denied), end; i != end; ++i){
         if (is_directory(i->path())){
             std::filesystem::remove_all(i->path());
         }
