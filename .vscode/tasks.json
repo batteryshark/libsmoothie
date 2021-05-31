@@ -24,7 +24,7 @@
             "dependsOn": [
                 "Create Binary Path",
                 "Test Libsmoothie [Windows 64-bit]",
-                "Libsmoothie [Windows 64-bit]",
+                "Libsmoothie DLL [Windows 64-bit]"
             ],
             "presentation": {
                 "reveal": "always",
@@ -40,7 +40,7 @@
             "dependsOn": [
                 "Create Binary Path",
                 "Test Libsmoothie [Linux 64-bit]",
-                "Libsmoothie [Linux 64-bit]",
+                "Libsmoothie Shared [Linux 64-bit]"                
             ],
             "presentation": {
                 "reveal": "always",
@@ -76,9 +76,9 @@
                 "reveal": "always",
                 "panel": "shared"
             }
-        },
+        },        
         {
-            "label": "Libsmoothie [Windows 64-bit]",
+            "label": "Libsmoothie DLL [Windows 64-bit]",
             "type": "shell",
             "command": [
                 "x86_64-w64-mingw32-g++",
@@ -103,7 +103,7 @@
                 "reveal": "always",
                 "panel": "shared"
             }
-        }, 
+        },         
         {
             "label": "Test Libsmoothie [Linux 64-bit]",
             "type": "shell",
@@ -129,7 +129,7 @@
             }
         },
         {
-            "label": "Libsmoothie [Linux 64-bit]",
+            "label": "Libsmoothie Shared [Linux 64-bit]",
             "type": "shell",
             "command": [
                 "g++",
@@ -151,6 +151,6 @@
                 "reveal": "always",
                 "panel": "shared"
             }
-        },                       
+        }                              
     ]
 }
