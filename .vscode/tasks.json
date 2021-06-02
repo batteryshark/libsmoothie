@@ -3,97 +3,56 @@
     "tasks": [
         // -- [COMMON TASKS] -- 
         {
-            "label": "Create Binary Path",
+            "label": "**Generate Build Path**",
             "type": "shell",
-            "osx": {
-                "command": "mkdir -p ./bin"
-            },
-            "linux": {
-                "command": "mkdir -p ./bin"
-            },
-            "windows": {
-                "command": "cmd",
-                "args": [
-                    "/C",
-                    "if not exist .\\bin mkdir .\\bin"
-                ]
-            }
+            "osx": {"command": "mkdir -p ./bin"},
+            "linux": {"command": "mkdir -p ./bin"},
+            "windows": {"command": "cmd /C if not exist bin mkdir bin"}
         },
         {
-            "label": "Build Binaries [Windows 64-bit]",
-            "dependsOn": [
-                "Create Binary Path",
-                "Test Libsmoothie [Windows 64-bit]",
-                "Libsmoothie DLL [Windows 64-bit]"
-            ],
-            "presentation": {
-                "reveal": "always",
-                "panel": "shared"
-            },
+            "label": "**Clean Build Path**",
+            "type": "shell",
+            "osx": {"command": "rm -rf ./bin"},
+            "linux": {"command": "rm -rf ./bin"},
+            "windows": {"command": "cmd /C if exist bin rmdir /s /q bin"},            
             "group": {
                 "kind": "build",
                 "isDefault": true
-            }
-        },    
+            },            
+        },
         {
-            "label": "Build Binaries [Linux 64-bit]",
-            "dependsOn": [
-                "Create Binary Path",
-                "Test Libsmoothie [Linux 64-bit]",
-                "Libsmoothie Shared [Linux 64-bit]"                
-            ],
-            "presentation": {
-                "reveal": "always",
-                "panel": "shared"
-            },
+            "label": "**Create Release [Windows]**",
+            "type": "shell",
+            "command": "python3 tools/rlsgen.py libsmoothie_windows libsmoothie.dll",
             "group": {
                 "kind": "build",
                 "isDefault": true
-            }
-        },              
+            },
+        },  
         {
-            "label": "Test Libsmoothie [Windows 64-bit]",
+            "label": "**Create Release [Linux]**",
             "type": "shell",
-            "command": [
-                "x86_64-w64-mingw32-g++",
-                "--std",
-                "c++17",               
-                "-fshort-wchar",
-                "${workspaceFolder}/src/mount_utils_windows.cpp",         
-                "${workspaceFolder}/src/utils.cpp",                   
-                "${workspaceFolder}/src/mapmanager.cpp",                
-                "${workspaceFolder}/src/mountmanager.cpp",
-                "${workspaceFolder}/src/libsmoothie.cpp",  
-                "${workspaceFolder}/src/test_libsmoothie.cpp",
-                "-static",
-                "-static-libgcc",
-                "-static-libstdc++",
-                "-lgcc",
-                "-lvirtdisk",
-                "-o ${workspaceFolder}/bin/test_libsmoothie.exe"
-            ],
-            "presentation": {
-                "reveal": "always",
-                "panel": "shared"
-            }
-        },        
+            "command": "python3 tools/rlsgen.py libsmoothie_linux libsmoothie.so",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+        },   
         {
-            "label": "Libsmoothie DLL [Windows 64-bit]",
+            "label": "Build Libsmoothie [Windows 64-bit]",
             "type": "shell",
+            "dependsOn":["**Generate Build Path**"],
             "command": [
                 "x86_64-w64-mingw32-g++",
                 "--std",
                 "c++17",
                 "-shared",
-                "-fshort-wchar",
-                "${workspaceFolder}/src/mount_utils_windows.cpp",         
-                "${workspaceFolder}/src/utils.cpp",                   
-                "${workspaceFolder}/src/mapmanager.cpp",                
+                "${workspaceFolder}/src/utils.cpp",
+                "${workspaceFolder}/src/mapmanager.cpp",
+                "${workspaceFolder}/src/mount_utils_windows.cpp",
                 "${workspaceFolder}/src/mountmanager.cpp",
-                "${workspaceFolder}/src/libsmoothie.cpp",  
-                "${workspaceFolder}/src/test_libsmoothie.cpp",
+                "${workspaceFolder}/src/libsmoothie.cpp",
                 "-static",
-                "-static-libgcc",
                 "-static-libstdc++",
                 "-lgcc",
                 "-lvirtdisk",
@@ -102,44 +61,26 @@
             "presentation": {
                 "reveal": "always",
                 "panel": "shared"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
             }
         },         
+       
         {
-            "label": "Test Libsmoothie [Linux 64-bit]",
+            "label": "Build Libsmoothie [Linux 64-bit]",
             "type": "shell",
-            "command": [
-                "g++",
-                "--std",
-                "c++17",               
-                "${workspaceFolder}/src/mount_utils_linux.cpp",         
-                "${workspaceFolder}/src/utils.cpp",                   
-                "${workspaceFolder}/src/mapmanager.cpp",                
-                "${workspaceFolder}/src/mountmanager.cpp",
-                "${workspaceFolder}/src/libsmoothie.cpp",  
-                "${workspaceFolder}/src/test_libsmoothie.cpp",
-                "-static",
-                "-static-libgcc",
-                "-static-libstdc++",
-                "-lgcc",
-                "-o ${workspaceFolder}/bin/test_libsmoothie.elf"
-            ],
-            "presentation": {
-                "reveal": "always",
-                "panel": "shared"
-            }
-        },
-        {
-            "label": "Libsmoothie Shared [Linux 64-bit]",
-            "type": "shell",
+            "dependsOn":["**Generate Build Path**"],            
             "command": [
                 "g++",
                 "--std",
                 "c++17",
                 "-shared",
                 "-fPIC",
-                "${workspaceFolder}/src/mount_utils_linux.cpp",         
-                "${workspaceFolder}/src/utils.cpp",                   
-                "${workspaceFolder}/src/mapmanager.cpp",                
+                "${workspaceFolder}/src/utils.cpp",
+                "${workspaceFolder}/src/mapmanager.cpp",
+                "${workspaceFolder}/src/mount_utils_linux.cpp",                
                 "${workspaceFolder}/src/mountmanager.cpp",
                 "${workspaceFolder}/src/libsmoothie.cpp",
                 "-static-libgcc",
@@ -150,6 +91,10 @@
             "presentation": {
                 "reveal": "always",
                 "panel": "shared"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
             }
         }                              
     ]
