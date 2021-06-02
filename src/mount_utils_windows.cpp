@@ -61,12 +61,12 @@ int mount_virtual_disk(HANDLE hDisk, const char* path_to_mntpoint){
         printf("AttachVirtualDisk Failed!\n");
         return 0;
     }
-
-    wchar_t vdpp[MAX_PATH] = {0x00};
+    
+    WCHAR vdpp[MAX_PATH] = {0x00};
     ULONG vdpp_size = sizeof(vdpp);
     GetVirtualDiskPhysicalPath(hDisk,&vdpp_size , vdpp);
-    
-    wchar_t* device_index_w = NULL;
+
+    WCHAR* device_index_w = NULL;
     DWORD device_index = 0;
     DWORD device_index_type = 0;
     if(wcsstr(vdpp,L"\\\\.\\PhysicalDrive")){
@@ -77,6 +77,8 @@ int mount_virtual_disk(HANDLE hDisk, const char* path_to_mntpoint){
         device_index_w = wcsstr(vdpp,L"\\\\.\\CDROM") + wcslen(L"\\\\.\\CDROM");
         device_index = atoi((char*)device_index_w);
         device_index_type = FILE_DEVICE_CD_ROM;
+    }else{
+        wprintf(L"[mount_virtual_disk] Failed: Could not Identify Disk Type: %s\n",vdpp);
     }
 
     char volume_path[MAX_PATH] = {0x00};
