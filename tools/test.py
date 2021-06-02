@@ -38,8 +38,8 @@ if __name__ == "__main__":
     smoothie_create.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_char_p]
 
 
-    mnt_root = tempfile.TemporaryDirectory(prefix="lstest_mnt")
-    save_root = tempfile.TemporaryDirectory(prefix="lstest_save")
+    mnt_root = tempfile.TemporaryDirectory(prefix="lstest_tmp_")
+    save_root = tempfile.TemporaryDirectory(prefix="lstest_save_")
     
 
     path_to_root = ctypes.create_string_buffer(mnt_root.name.encode('utf-8'))
@@ -57,6 +57,7 @@ if __name__ == "__main__":
     print("smoothie_create: OK!")
     out_path = ctypes.create_string_buffer(1024)    
     virtual_path = ctypes.create_string_buffer("C:\\teststuff\\test.txt".encode('utf-8'))
+
     if(not smoothie_resolve(path_to_root, virtual_path, out_path)):
         print("smoothie_resolve Failed!")
     else:
