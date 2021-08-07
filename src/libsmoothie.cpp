@@ -138,6 +138,8 @@ int smoothie_create(const char* path_to_mapfile, const char* path_to_root, const
 
     std::vector<std::string> mapfile_lines  = read_lines_from_file(mapfile_path.string());
     for (auto & line : mapfile_lines) {
+        // Skip Comments
+        if(line.c_str()[0] == '#'){continue;}
         std::vector<std::string> params = split_string(line,";");
         // Temporary compatibility fallback for tab-delimited maps.
         if(params.empty()){std::vector<std::string> params = split_string(line,"\t");}
