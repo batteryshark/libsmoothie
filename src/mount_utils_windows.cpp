@@ -71,11 +71,11 @@ int mount_virtual_disk(HANDLE hDisk, const char* path_to_mntpoint){
     DWORD device_index_type = 0;
     if(wcsstr(vdpp,L"\\\\.\\PhysicalDrive")){
         device_index_w = wcsstr(vdpp,L"\\\\.\\PhysicalDrive") + wcslen(L"\\\\.\\PhysicalDrive");
-        device_index = atoi((char*)device_index_w);
+        device_index = _wtoi(device_index_w);
         device_index_type = FILE_DEVICE_DISK;
     }else if(wcsstr(vdpp,L"\\\\.\\CDROM")){
         device_index_w = wcsstr(vdpp,L"\\\\.\\CDROM") + wcslen(L"\\\\.\\CDROM");
-        device_index = atoi((char*)device_index_w);
+        device_index = _wtoi(device_index_w);
         device_index_type = FILE_DEVICE_CD_ROM;
     }else{
         wprintf(L"[mount_virtual_disk] Failed: Could not Identify Disk Type: %s\n",vdpp);
@@ -98,7 +98,10 @@ int mount_virtual_disk(HANDLE hDisk, const char* path_to_mntpoint){
                 break;
             }
         }
-        if (!FindNextVolumeA(hVolume, volume_path, sizeof(volume_path))){break;}
+        if (!FindNextVolumeA(hVolume, volume_path, sizeof(volume_path)) && GetLastError() == ERROR_NO_MORE_FILES){
+            FindVolumeClose(hVolume);
+            break;
+            }
         if(volume_path[strlen(volume_path)-1] == '\\'){volume_path[strlen(volume_path)-1] = 0x00;}
     }
     if(!target_volume_found){
