@@ -8,6 +8,7 @@
 #include <virtdisk.h>
 #include <string>
 #include <algorithm>
+#include <sddl.h>
 
 #ifndef VIRTUAL_STORAGE_TYPE_DEVICE_VHDX
 #define VIRTUAL_STORAGE_TYPE_DEVICE_VHDX 3
@@ -55,8 +56,19 @@ int mount_virtual_disk(HANDLE hDisk, const char* path_to_mntpoint){
     ATTACH_VIRTUAL_DISK_PARAMETERS attachParameters;
     memset(&attachParameters,0x00,sizeof(attachParameters));
     attachParameters.Version = ATTACH_VIRTUAL_DISK_VERSION_1;
+    PSECURITY_DESCRIPTOR sd=NULL;
+if(!ConvertStringSecurityDescriptorToSecurityDescriptorA(
+            "O:BAG:BAD:(A;;GA;;;WD)",
+            SDDL_REVISION_1,
+            &sd,
+            NULL)){
+                printf("ConvertStringSecurityDescriptorToSecurityDescriptorA Failed: %04X\n", GetLastError());
+                getchar();
+                return 0;
+
+            };
     DWORD attach_flags = ATTACH_VIRTUAL_DISK_FLAG_READ_ONLY | ATTACH_VIRTUAL_DISK_FLAG_NO_DRIVE_LETTER | ATTACH_VIRTUAL_DISK_FLAG_PERMANENT_LIFETIME;
-    DWORD status = AttachVirtualDisk(hDisk,NULL,(ATTACH_VIRTUAL_DISK_FLAG)attach_flags,0,&attachParameters,0);
+    DWORD status = AttachVirtualDisk(hDisk,sd,(ATTACH_VIRTUAL_DISK_FLAG)attach_flags,0,&attachParameters,0);
     if(status){
         printf("AttachVirtualDisk Failed!\n");
         return 0;
@@ -64,8 +76,11 @@ int mount_virtual_disk(HANDLE hDisk, const char* path_to_mntpoint){
     
     WCHAR vdpp[MAX_PATH] = {0x00};
     ULONG vdpp_size = sizeof(vdpp);
-    GetVirtualDiskPhysicalPath(hDisk,&vdpp_size , vdpp);
-
+    DWORD ec = GetVirtualDiskPhysicalPath(hDisk,&vdpp_size , vdpp);
+    if(ec){
+        printf("GetVirtualDiskPhysicalPath Failed: %04X\n",ec);
+        return 0;
+    }
     WCHAR* device_index_w = NULL;
     DWORD device_index = 0;
     DWORD device_index_type = 0;
@@ -78,7 +93,7 @@ int mount_virtual_disk(HANDLE hDisk, const char* path_to_mntpoint){
         device_index = _wtoi(device_index_w);
         device_index_type = FILE_DEVICE_CD_ROM;
     }else{
-        wprintf(L"[mount_virtual_disk] Failed: Could not Identify Disk Type: %s\n",vdpp);
+        wprintf(L"[mount_virtual_disk] Failed: Could not Identify Disk Type: %d %ls\n",vdpp_size,vdpp);
     }
 
     char volume_path[MAX_PATH] = {0x00};
@@ -133,9 +148,9 @@ int open_virtual_disk(const char* path_to_image, PHANDLE hDev){
     openParameters.Version = OPEN_VIRTUAL_DISK_VERSION_1;
 
     VIRTUAL_STORAGE_TYPE storageType;
-    storageType.DeviceId = device_type;
-    storageType.VendorId = VIRTUAL_STORAGE_TYPE_VENDOR_MICROSOFT;
-    DWORD access_mask = VIRTUAL_DISK_ACCESS_ATTACH_RO | VIRTUAL_DISK_ACCESS_GET_INFO;
+    storageType.DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_UNKNOWN;
+    storageType.VendorId = VIRTUAL_STORAGE_TYPE_VENDOR_UNKNOWN;
+    DWORD access_mask = VIRTUAL_DISK_ACCESS_ATTACH_RO | VIRTUAL_DISK_ACCESS_READ | VIRTUAL_DISK_ACCESS_GET_INFO;
 
     DWORD status = OpenVirtualDisk(&storageType,wpath_to_image,(VIRTUAL_DISK_ACCESS_MASK)access_mask,OPEN_VIRTUAL_DISK_FLAG_NONE,&openParameters,hDev);
     free(wpath_to_image);
