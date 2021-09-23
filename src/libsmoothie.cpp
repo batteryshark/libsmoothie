@@ -71,7 +71,11 @@ void failure_cleanup(std::filesystem::path& mount_root, std::filesystem::path& m
 
 // Resolve a content path based on local or global root.
 std::filesystem::path resolve_content_path(const std::filesystem::path& content_root ,const std::string& image_filename){
-
+    // If our image name is actually a path, return that instead.
+    if(std::filesystem::exists(image_filename)){
+        std::filesystem::path literal_path = image_filename;
+        return literal_path;
+    }
     std::filesystem::path local_path = content_root;
     local_path.append(image_filename);
     if(std::filesystem::exists(local_path)){return local_path;}

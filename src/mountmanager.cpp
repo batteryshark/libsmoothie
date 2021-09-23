@@ -8,6 +8,7 @@
 
 #include "mountmanager.h"
 
+#define MOUNT_UNK 0
 #define MOUNT_IMAGE 1
 #define MOUNT_RAW 2
 #define MOUNT_ZIP 3
@@ -27,7 +28,8 @@ unsigned int detect_mount_type(std::string& path_to_image){
     if(!ext.compare("vhd")){return MOUNT_IMAGE;}
     if(!ext.compare("vhdx")){return MOUNT_IMAGE;}
     if(!ext.compare("zip")){return MOUNT_ZIP;}
-    return MOUNT_RAW;
+    if(std::filesystem::is_directory(path_to_image)){return MOUNT_RAW;}
+    return MOUNT_UNK;
 }
 
 
@@ -37,15 +39,19 @@ int add_mount(std::string& image_filename, std::filesystem::path& image_path, st
     unsigned int mount_type = detect_mount_type(image_filename);
     if(!mount_type){return 0;}
 
-    // Construct Mountpoint Path
+    // Construct Mountpoint Path Only if not RAW
+    if(mount_type != MOUNT_RAW){
     std::filesystem::create_directories(mount_path);
+    }
+
 
     switch(mount_type){
         case MOUNT_IMAGE:
             if(!mount_image(image_path.string().c_str(),mount_path.string().c_str())){return 0;}
             break;
         case MOUNT_RAW:
-            // TODO
+            // We don't need a dedicated mount path if our image is RAW
+            mount_path = image_path;
             break;
         case MOUNT_ZIP:
             if(!extract_zip_file(image_path.string(),mount_path.string())){return 0;}
