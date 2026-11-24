@@ -1,0 +1,6 @@
+# Build output
+bin/
+
+# Runtime dirs and state (created by smoothie itself)
+mnt/
+map/

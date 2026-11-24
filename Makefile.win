@@ -1,0 +1,32 @@
+# libsmoothie Windows build (MinGW-w64)
+# Requires: x86_64-w64-mingw32-g++ (MinGW-w64 ships the virtdisk import library)
+# Windows:      mingw32-make -f Makefile.win
+# Linux/macOS:  make -f Makefile.win
+
+TARGET = libsmoothie.dll
+SRC = src/libsmoothie.cpp \
+      src/mapmanager.cpp \
+      src/mountmanager.cpp \
+      src/utils.cpp \
+      src/mount_utils_windows.cpp
+
+CXX = x86_64-w64-mingw32-g++
+CXXFLAGS = -std=c++17 -shared -static -static-libstdc++ -lgcc -Wall -Wextra -O2
+LDFLAGS = -lvirtdisk
+
+.PHONY: all clean
+
+all: bin/$(TARGET)
+
+ifeq ($(OS),Windows_NT)
+RMDIR = rmdir /s /q
+else
+RMDIR = rm -rf
+endif
+
+bin/$(TARGET): $(SRC)
+	-mkdir bin
+	$(CXX) $(CXXFLAGS) $(SRC) $(LDFLAGS) -o $@
+
+clean:
+	-$(RMDIR) bin
